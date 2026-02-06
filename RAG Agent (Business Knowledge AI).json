@@ -1,0 +1,325 @@
+{
+  "name": "RAG Agent (Business Knowledge AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "DOCUMENT SUBMISSION FORM",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "RAG FILE",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -880,
+        -16
+      ],
+      "id": "c07a0c9f-b1a1-4f68-b53d-4bf401ccc2fa",
+      "name": "On form submission",
+      "webhookId": "a332ef0b-9466-404c-974c-417821b3cf20"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "legaldocuments",
+          "mode": "list",
+          "cachedResultName": "legaldocuments"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        -16
+      ],
+      "id": "463e9620-8801-4fe7-8bca-283f4c5f560b",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "m61TE2xtxtY72Dz5",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        192
+      ],
+      "id": "d03d9559-2c5c-422d-ac11-da070d549b37",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "X1NPpAYUsYSxpn1x",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "case_name",
+                "value": "={{$json[\"RAG FILE\"].fileName}}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        192
+      ],
+      "id": "6f7fcc10-3dc7-4307-abe7-9dc7d689ee1d",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        32
+      ],
+      "id": "464615f1-d71d-415c-95f6-537709297cbc",
+      "name": "When chat message received",
+      "webhookId": "1c65f2aa-2e3b-46cf-a835-cc28527e8943"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a legal assistant AI.\n\nYou must answer questions using the document retrieval tool when the user asks about specific legal cases, settlements, clients, or case details.\n\nAlways use the Pinecone retrieval tool to look up relevant information before answering.\n\nIf the user mentions a case name, use that to focus your search.\nIf the answer is not found in the documents, say you could not find it in the case files.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        304,
+        32
+      ],
+      "id": "0e1d78c4-0b93-4ba3-8ac8-79a7843633da",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search through uploaded legal case documents stored in a vector database.\n\nThis tool retrieves relevant excerpts from case files based on the user’s question.  \nIt should be used whenever the user asks about:\n\n• Case details  \n• Settlement amounts  \n• Legal decisions  \n• Client information  \n• Events or facts from a specific case  \n\nIf the user mentions a case name (for example, \"Johnson case\"), include that as the field \"case_name\" when performing the search so results are limited to that case.\n\nOnly rely on the retrieved document content when answering. If no relevant information is found, say that the information was not located in the case documents.\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "legaldocuments",
+          "mode": "list",
+          "cachedResultName": "legaldocuments"
+        },
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "case_name",
+                "value": "={{$json[\"RAG FILE\"].fileName}}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        224
+      ],
+      "id": "345659ca-17a0-4233-86e5-761d6dd29486",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "m61TE2xtxtY72Dz5",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        240
+      ],
+      "id": "32a82679-cee4-4641-9f21-1451809ddbce",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "X1NPpAYUsYSxpn1x",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        368
+      ],
+      "id": "f6fba01a-4b45-4884-a01b-9f754e99b94f",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "X1NPpAYUsYSxpn1x",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 700,
+        "chunkOverlap": 100,
+        "options": {
+          "splitCode": "markdown"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        400
+      ],
+      "id": "a46eaad6-c69a-4a7e-b48b-cd4ba6632338",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "1f398e24-7a20-4a0f-b969-09d12b6856ff",
+  "meta": {
+    "instanceId": "35fdb559a269365838a75ef7f0637433e50004454b8cba8e9dab8bce6c285d11"
+  },
+  "id": "420iJ2_lwx0eSFnf2RFWw",
+  "tags": []
+}
